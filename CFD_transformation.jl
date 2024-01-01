@@ -4,8 +4,9 @@ pythonplot()
 
 r_min = 1
 r_max = 10
-m = 60
-n = 20
+m = 100
+n = Int(ceil(log(m/(m - 2*pi), r_max/r_min)))
+r_max = r_min*(m/(m - 2*pi))^n
 k = 300
 dt = 0.0001
 
@@ -98,17 +99,15 @@ for t = 1:k-1
 
             end
 
-            xi = i
-            eta = j
+            xi = i - 1
+            eta = j - 1
 
-            a = (r_max - r_min)/n^2
+            dxdxi = -(2*r_min*pi*sin(2*pi*xi/m)*(m/(m - 2*pi))^eta)/m
+            dydxi = (2*r_min*pi*cos(2*pi*xi/m)*(m/(m - 2*pi))^eta)/m
+            dxdeta = r_min*log(m/(m - 2*pi))*cos(2*pi*xi/m)*(m/(m - 2*pi))^eta
+            dydeta = r_min*log(m/(m - 2*pi))*sin(2*pi*xi/m)*(m/(m - 2*pi))^eta
 
-            dxdxi = -2*pi/m*(a*eta^2 + r_min)*sin(2*pi*xi/m)
-            dydxi = 2*pi/m*(a*eta^2 + r_min)*cos(2*pi*xi/m)
-            dxdeta = 2*a*eta*cos(2*pi*xi/m)
-            dydeta = 2*a*eta*sin(2*pi*xi/m)
-
-            J = -4*pi/m*a*eta*(a*eta^2 + r_min)
+            J = -(2*r_min^2*pi*log(m/(m - 2*pi))*(m/(m - 2*pi))^(2*eta))/m
 
             drhodx = 1/J*(drhodxi*dydeta - drhodeta*dydxi)
             drhody = 1/J*(drhodeta*dxdxi - drhodxi*dxdeta)
@@ -191,15 +190,15 @@ for t = 1:k-1
 
             end
 
-            xi = i
-            eta = j
+            xi = i - 1
+            eta = j - 1
 
-            dxdxi = -2*pi/m*((r_max - r_min)/n^2*eta^2 + r_min)*sin(2*pi*xi/m)
-            dydxi = 2*pi/m*((r_max - r_min)/n^2*eta^2 + r_min)*cos(2*pi*xi/m)
-            dxdeta = 2*(r_max - r_min)/n^2*eta*cos(2*pi*xi/m)
-            dydeta = 2*(r_max - r_min)/n^2*eta*sin(2*pi*xi/m)
+            dxdxi = -(2*r_min*pi*sin(2*pi*xi/m)*(m/(m - 2*pi))^eta)/m
+            dydxi = (2*r_min*pi*cos(2*pi*xi/m)*(m/(m - 2*pi))^eta)/m
+            dxdeta = r_min*log(m/(m - 2*pi))*cos(2*pi*xi/m)*(m/(m - 2*pi))^eta
+            dydeta = r_min*log(m/(m - 2*pi))*sin(2*pi*xi/m)*(m/(m - 2*pi))^eta
 
-            J = -4*pi*eta*(r_max - r_min)/n^2/m*((r_max - r_min)/n^2*eta^2 + r_min)
+            J = -(2*r_min^2*pi*log(m/(m - 2*pi))*(m/(m - 2*pi))^(2*eta))/m
 
             drhodx = 1/J*(drhodxi*dydeta - drhodeta*dydxi)
             drhody = 1/J*(drhodeta*dxdxi - drhodxi*dxdeta)
@@ -229,12 +228,16 @@ for t = 1:k-1
             T[i, j, t+1] = e[i, j, t+1]/c_v
             p[i, j, t+1] = rho[i, j, t+1]*R*T[i, j, t+1]
 
+            if isnan(p[i, j, t+1]) == true
+                error("NaN @ t = ", t)
+            end
+
         end
     end
 
 end
 
-r = range(r_min, r_max, n)
+r = r_min*(m/(m - 2*pi)).^(0:n-1)
 theta = range(0, 2*pi, m)
 
 x = zeros(m, n)
@@ -253,7 +256,7 @@ p_min = Int(floor(minimum(p)))
 p_max = Int(ceil(maximum(p)))
 
 anim = @animate for i = 1:k
-    contourf(x, y, p[:, :, i], color=:turbo, levels=p_min:0.1:p_max, colorbar_ticks=(p_min:p_max, p_min:p_max), aspect_ratio=:equal, clim=(p_min, p_max))
+    contourf(x, y, p[:, :, i], color=:turbo, levels=range(p_min, p_max, 100), colorbar_ticks=(range(p_min, p_max, 10), round.(range(p_min, p_max, 10), digits=2)), aspect_ratio=:equal, clim=(p_min, p_max))
 end
 
 gif(anim, "CFD_transformation.gif")
