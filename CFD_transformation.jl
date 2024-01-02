@@ -5,10 +5,15 @@ pythonplot()
 r_min = 1
 r_max = 10
 m = 100
-n = Int(ceil(log(m/(m - 2*pi), r_max/r_min)))
-r_max = r_min*(m/(m - 2*pi))^n
 k = 300
 dt = 0.0001
+playback_speed = 1
+
+n = Int(ceil(log(m/(m - 2*pi), r_max/r_min)))
+r_max = r_min*(m/(m - 2*pi))^n
+
+c_v = 717
+R = 287
 
 rho = zeros(m, n, k)
 u = zeros(m, n, k)
@@ -26,9 +31,8 @@ drhodt = zeros(m, n)
 dudt = zeros(m, n)
 dvdt = zeros(m, n)
 dedt = zeros(m, n)
-
-c_v = 717
-R = 287
+x = zeros(m, n)
+y = zeros(m, n)
 
 T[:, :, 1] .= 273.15
 for i = 1:m
@@ -240,9 +244,6 @@ end
 r = r_min*(m/(m - 2*pi)).^(0:n-1)
 theta = range(0, 2*pi, m)
 
-x = zeros(m, n)
-y = zeros(m, n)
-
 for i = eachindex(theta)
     for j = eachindex(r)
 
@@ -255,7 +256,7 @@ end
 p_min = Int(floor(minimum(p)))
 p_max = Int(ceil(maximum(p)))
 
-anim = @animate for i = 1:k
+anim = @animate for i = 1:playback_speed:k
     contourf(x, y, p[:, :, i], color=:turbo, levels=range(p_min, p_max, 100), colorbar_ticks=(range(p_min, p_max, 10), round.(range(p_min, p_max, 10), digits=2)), aspect_ratio=:equal, clim=(p_min, p_max))
 end
 
